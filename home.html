@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Главная</title>
+<style>
+  :root {
+    --top: #0b1026;
+    --bot: #1c2548;
+    --fg: #f4f1ff;
+    --on-fg: #0d1b2e;
+    --fg-soft: rgba(244, 241, 255, .62);
+    --glass: rgba(255, 255, 255, .10);
+    --glass-hover: rgba(255, 255, 255, .18);
+    --dlg: rgba(24, 28, 60, .88);
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    font-family: var(--sans);
+    color: var(--fg);
+    background: linear-gradient(180deg, var(--top), var(--bot)) fixed;
+    transition: background 1s ease, color 1s ease;
+  }
+  main {
+    width: min(720px, 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    margin-top: -4vh;
+  }
+  .time {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(88px, 22vw, 190px);
+    line-height: .9;
+    letter-spacing: -.03em;
+    font-variant-numeric: lining-nums tabular-nums;
+    text-align: center;
+  }
+  .hello {
+    margin-top: 18px;
+    text-align: center;
+    color: var(--fg-soft);
+    font-size: clamp(16px, 2.6vw, 20px);
+    letter-spacing: .01em;
+  }
+  form.searchform { width: min(640px, 100%); }
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 0 22px;
+    height: 58px;
+    border-radius: 29px;
+    background: var(--glass);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, .14);
+    transition: background .2s, box-shadow .2s, border-color .2s;
+  }
+  .search:focus-within {
+    background: var(--glass-hover);
+    border-color: var(--fg-soft);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, .18);
+  }
+  .search svg { flex: none; opacity: .7; }
+  input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    background: none;
+    border: 0;
+    outline: 0;
+    color: inherit;
+    font: inherit;
+    font-size: 18px;
+  }
+  input::placeholder { color: var(--fg-soft); }
+  kbd {
+    flex: none;
+    font: 13px var(--sans);
+    padding: 3px 9px;
+    border-radius: 7px;
+    color: var(--fg-soft);
+    border: 1px solid var(--fg-soft);
+  }
+  .search:focus-within kbd { opacity: 0; }
+
+  /* ---------- Закладки ---------- */
+  .tiles {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 22px 20px;
+    width: 100%;
+  }
+  .tile { position: relative; width: 88px; }
+  .tile > a, .add {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    color: var(--fg);
+    text-decoration: none;
+    background: none;
+    border: 0;
+    font: inherit;
+    cursor: pointer;
+    width: 100%;
+    outline: 0;
+  }
+  .box {
+    width: 76px;
+    height: 76px;
+    border-radius: 22px;
+    display: grid;
+    place-items: center;
+    background: var(--glass);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, .14);
+    transition: transform .18s ease, background .2s, box-shadow .2s;
+  }
+  .box img { width: 40px; height: 40px; border-radius: 10px; object-fit: contain; }
+  .box .letter { font: 600 28px var(--sans); text-transform: uppercase; }
+  .tile > a:hover .box, .tile > a:focus-visible .box,
+  .add:hover .box, .add:focus-visible .box {
+    background: var(--glass-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .2);
+  }
+  .tile > a:focus-visible .box, .add:focus-visible .box { box-shadow: 0 0 0 2px var(--fg-soft); }
+  .label {
+    max-width: 100%;
+    font-size: 13.5px;
+    color: var(--fg-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .add .box { border: 1.5px dashed var(--fg-soft); background: transparent; }
+  .add .box svg { opacity: .8; }
+  .del {
+    position: absolute;
+    top: -6px;
+    right: 2px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 0;
+    display: grid;
+    place-items: center;
+    background: var(--fg);
+    color: var(--on-fg);
+    font: 600 15px/1 var(--sans);
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(.7);
+    transition: opacity .15s, transform .15s;
+  }
+  .tile:hover .del, .del:focus-visible { opacity: 1; transform: scale(1); }
+  @media (hover: none) { .del { opacity: .9; transform: scale(1); } }
+
+  /* ---------- Наборы закладок ---------- */
+  .tileswrap { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 26px; }
+  .setbar { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; opacity: .72; transition: opacity .25s; }
+  .tileswrap:hover .setbar, .setbar:focus-within { opacity: 1; }
+  .setpill {
+    display: flex; align-items: center; gap: 2px; padding: 4px;
+    border-radius: 999px;
+    background: var(--glass);
+    border: 1px solid rgba(255, 255, 255, .16);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, .14), inset 0 1px 0 rgba(255, 255, 255, .18);
+  }
+  .setbtn {
+    height: 30px; padding: 0 16px;
+    border-radius: 999px; border: 0; background: none;
+    color: var(--fg-soft); font: 500 13.5px var(--sans);
+    cursor: pointer; transition: background .25s, color .25s, box-shadow .25s;
+  }
+  .setbtn:hover { color: var(--fg); }
+  .setbtn[aria-pressed="true"] { background: var(--fg); color: var(--on-fg); box-shadow: 0 4px 14px rgba(0, 0, 0, .25); }
+  .setround {
+    width: 32px; height: 32px; padding: 0; border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, .16); background: var(--glass);
+    color: var(--fg-soft); font: 500 17px/1 var(--sans);
+    display: grid; place-items: center; cursor: pointer;
+    transition: background .2s, color .2s, transform .2s;
+  }
+  .setround:hover { color: var(--fg); background: var(--glass-hover); transform: translateY(-1px); }
+  .setbtn:focus-visible, .setround:focus-visible { outline: 2px solid var(--fg-soft); outline-offset: 1px; }
+
+  /* ---------- Окно добавления ---------- */
+  dialog {
+    margin: auto;
+    width: min(380px, calc(100% - 32px));
+    padding: 24px;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 26px;
+    color: var(--fg);
+    background: var(--dlg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .35);
+  }
+  dialog::backdrop { background: rgba(0, 0, 0, .35); backdrop-filter: blur(3px); }
+  dialog h2 { font: 600 18px var(--sans); margin-bottom: 16px; }
+  dialog label { display: block; font-size: 13px; color: var(--fg-soft); margin: 12px 0 6px; }
+  dialog input {
+    display: block;
+    width: 100%;
+    height: 46px;
+    padding: 0 14px;
+    border-radius: 14px;
+    background: var(--glass);
+    border: 1px solid rgba(255, 255, 255, .14);
+    font-size: 16px;
+  }
+  dialog input:focus { border-color: var(--fg-soft); }
+  .err { min-height: 18px; margin-top: 10px; font-size: 13px; color: #ff8d8d; }
+  .row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; }
+  .btn {
+    height: 42px;
+    padding: 0 20px;
+    border-radius: 14px;
+    border: 0;
+    font: 500 15px var(--sans);
+    cursor: pointer;
+    color: var(--fg);
+    background: var(--glass);
+  }
+  .btn:hover { background: var(--glass-hover); }
+  .btn.primary { background: var(--fg); color: var(--on-fg); }
+  .btn:focus-visible { outline: 2px solid var(--fg-soft); outline-offset: 2px; }
+
+  /* ---------- Фон-картинка и настройки ---------- */
+  [hidden] { display: none !important; }
+  .bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: center / cover no-repeat;
+    opacity: 0;
+    transition: opacity .6s ease;
+    pointer-events: none;
+  }
+  .bg.on { opacity: 1; }
+  .bg::after { content: ""; position: absolute; inset: 0; background: #000; opacity: var(--dim, .25); }
+  .gear {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--fg-soft);
+    background: var(--glass);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, .14);
+    cursor: pointer;
+    transition: color .2s, background .2s;
+  }
+  .gear:hover, .gear:focus-visible { color: var(--fg); background: var(--glass-hover); outline: 0; }
+  .gear:focus-visible { box-shadow: 0 0 0 2px var(--fg-soft); }
+  .seg {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 4px;
+    border-radius: 16px;
+    background: var(--glass);
+    border: 1px solid rgba(255, 255, 255, .14);
+  }
+  .seg button {
+    height: 38px;
+    border: 0;
+    border-radius: 12px;
+    background: none;
+    color: var(--fg-soft);
+    font: 500 15px var(--sans);
+    cursor: pointer;
+    transition: background .2s, color .2s;
+  }
+  .seg button:hover { color: var(--fg); }
+  .seg button[aria-pressed="true"] { background: var(--fg); color: var(--on-fg); }
+  .seg button:focus-visible { outline: 2px solid var(--fg-soft); outline-offset: 1px; }
+  .seg button { padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .seg.wrap { grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); }
+  dialog#setDlg { width: min(420px, calc(100% - 32px)); max-height: calc(100vh - 32px); overflow-y: auto; }
+  dialog input[type=color] { padding: 4px; cursor: pointer; }
+  dialog input[type=range] { height: 24px; padding: 0; border: 0; background: none; accent-color: var(--fg); }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .wallrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .wallrow span { flex: 1; min-width: 80px; font-size: 13px; color: var(--fg-soft); }
+  .sep { height: 1px; background: rgba(255, 255, 255, .14); margin: 14px 0 16px; }
+  .btn.full { width: 100%; }
+  a.btn { display: flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; }
+
+  /* ---------- Сейчас играет ---------- */
+  .np {
+    position: fixed;
+    left: 28px;
+    bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    width: min(600px, calc(100vw - 56px));
+    padding: 24px 32px 24px 24px;
+    border-radius: 40px;
+    background: var(--glass);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, .14);
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  .np.on { opacity: 1; transform: none; pointer-events: auto; }
+  .np { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .np.dragging { cursor: grabbing; transition: none; }
+
+  /* ---------- Виджеты, подсказки, калькулятор ---------- */
+  .prog { margin-top: 8px; text-align: center; font-size: 13px; letter-spacing: .04em; color: var(--fg-soft); opacity: .8; }
+  .searchform { position: relative; }
+  .shortcuts {
+    position: absolute; left: 0; right: 0; top: calc(100% + 10px);
+    text-align: center; font-size: 13px; color: var(--fg-soft);
+    opacity: 0; transition: opacity .25s; pointer-events: none;
+  }
+  .searchform:focus-within .shortcuts { opacity: 1; }
+  .calc { flex: none; margin-right: 4px; color: var(--fg); font-variant-numeric: tabular-nums; }
+
+  .chip {
+    position: fixed; top: 24px; left: 28px;
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 18px 8px 14px; border-radius: 999px;
+    background: var(--glass); border: 1px solid rgba(255, 255, 255, .14);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    font-size: 15px;
+  }
+  #wIcon { font-size: 20px; line-height: 1; }
+  #wCity { color: var(--fg-soft); }
+
+  .card {
+    position: fixed; right: 28px; width: 300px;
+    padding: 18px 20px; border-radius: 26px;
+    background: var(--glass); border: 1px solid rgba(255, 255, 255, .14);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  }
+  #tasks { top: 84px; max-height: calc(100vh - 340px); display: flex; flex-direction: column; }
+  #timer { bottom: 28px; }
+  .card-title { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-soft); }
+  #taskList { list-style: none; padding: 0; margin: 0 0 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+  .task { display: flex; align-items: center; gap: 10px; padding: 4px 0; font-size: 15px; }
+  .task input[type=checkbox] { flex: none; width: 18px; height: 18px; accent-color: var(--fg); cursor: pointer; }
+  .task span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .task.done span { text-decoration: line-through; opacity: .5; }
+  .empty { padding: 4px 0; font-size: 14px; color: var(--fg-soft); }
+  .task button { background: none; border: 0; padding: 0 4px; font: 18px/1 var(--sans); color: var(--fg-soft); cursor: pointer; opacity: 0; }
+  .task:hover button, .task button:focus-visible { opacity: 1; }
+  #taskIn { width: 100%; flex: none; height: 38px; padding: 0 12px; border-radius: 12px; background: var(--glass); border: 1px solid rgba(255, 255, 255, .14); font-size: 15px; }
+  #taskIn:focus { border-color: var(--fg-soft); }
+  .timer-time {
+    display: flex; align-items: flex-start; justify-content: center; gap: 2px;
+    margin: 2px 0 12px;
+    font: 300 64px/1 var(--serif); font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+  }
+  .tpart {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 2px 8px 8px; border-radius: 18px;
+    cursor: text; outline: 0; transition: background .2s;
+  }
+  .tpart:hover, .tpart:focus-visible { background: var(--glass); }
+  .tpart::after {
+    content: attr(data-l); margin-top: 8px;
+    font: 500 10.5px/1 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--fg-soft);
+  }
+  .tcolon { padding-top: 2px; opacity: .55; }
+  .card.running .tcolon { animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: .1; } }
+  .timer-bar { height: 5px; margin: 0 0 16px; border-radius: 3px; background: var(--glass-hover); overflow: hidden; }
+  .timer-bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--fg); transition: width .3s linear; }
+  #timer.running { border-color: var(--fg-soft); box-shadow: 0 14px 44px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255, 255, 255, .18); }
+  .timer-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tpart .timer-edit {
+    flex: none; width: 2.3ch; min-width: 60px; height: 64px; padding: 0;
+    border: 0; border-radius: 0; border-bottom: 2px solid var(--fg-soft);
+    background: none; color: inherit; font: inherit; letter-spacing: inherit;
+    text-align: center; outline: 0;
+  }
+  .card .btn { height: 36px; padding: 0 14px; font-size: 14px; }
+  @media (max-width: 1400px), (max-height: 700px) { .card { display: none; } }
+
+  /* ---------- Немного красоты ---------- */
+  .card, .np, .chip, .search, .box, .gear { box-shadow: 0 8px 26px rgba(0, 0, 0, .12), inset 0 1px 0 rgba(255, 255, 255, .16); }
+  .time { text-shadow: 0 10px 50px rgba(0, 0, 0, .16); }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    main > * { animation: rise .8s cubic-bezier(.2, .7, .2, 1) both; }
+    main > :nth-child(2) { animation-delay: .08s; }
+    main > :nth-child(3) { animation-delay: .16s; }
+    .card, .chip { animation: rise .8s cubic-bezier(.2, .7, .2, 1) .25s both; }
+  }
+
+  /* ---------- Режим перемещения ---------- */
+  .editing [data-move] {
+    outline: 2px dashed var(--fg-soft);
+    outline-offset: 10px;
+    border-radius: 6px;
+    cursor: move;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .editing [data-move] * { pointer-events: none; }
+  .editing .np { outline: 2px dashed var(--fg-soft); outline-offset: 6px; opacity: 1; transform: none; pointer-events: auto; }
+  .editbar {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    translate: -50% 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px 8px 22px;
+    border-radius: 999px;
+    color: var(--fg);
+    background: var(--dlg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, .16);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .3);
+    font-size: 15px;
+  }
+  .np.paused .np-text { opacity: .55; }
+  .np-cover {
+    flex: none;
+    width: 128px;
+    height: 128px;
+    border-radius: 28px;
+    display: grid;
+    place-items: center;
+    background: var(--glass-hover) center / cover no-repeat;
+  }
+  .np-cover svg { opacity: .7; width: 52px; height: 52px; }
+  .np-cover.has-img svg { display: none; }
+  .np-text { min-width: 0; flex: 1; transition: opacity .3s; }
+  .np-title, .np-artist {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .np-title { font-weight: 600; font-size: 30px; }
+  .np-artist { margin-top: 4px; font-size: 27px; color: var(--fg-soft); }
+  .np-bar {
+    height: 6px;
+    margin-top: 20px;
+    border-radius: 3px;
+    background: var(--glass-hover);
+    overflow: hidden;
+  }
+  .np-bar i { display: block; height: 100%; width: 0; background: var(--fg); border-radius: 3px; }
+  /* на маленьком окне большая карточка мешала бы — прячем */
+  @media (max-width: 1200px), (max-height: 780px) { .np { display: none; } }
+
+  .hint {
+    position: fixed;
+    bottom: 18px;
+    right: 28px;
+    text-align: right;
+    font-size: 12.5px;
+    color: var(--fg-soft);
+    opacity: .75;
+    pointer-events: none;
+  }
+  @media (max-width: 520px) { kbd, .hint { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="bg" id="bg"></div>
+
+<button class="gear" id="gear" type="button" aria-label="Оформление" title="Оформление">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+</button>
+
+<main>
+  <header id="elClock">
+    <div class="time" id="time">00:00</div>
+    <div class="hello" id="hello"></div>
+    <div class="prog" id="prog"></div>
+  </header>
+
+  <form class="searchform" id="form" autocomplete="off">
+    <label class="search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="text" placeholder="Поиск или адрес" aria-label="Поиск или адрес" autofocus>
+      <span class="calc" id="calc"></span>
+      <kbd>/</kbd>
+    </label>
+    <div class="shortcuts">g — Google · y — YouTube · w — Википедия · gh — GitHub · можно считать: 2+2*3</div>
+  </form>
+
+  <div class="tileswrap" id="tilesWrap">
+    <section class="tiles" id="tiles" aria-label="Закладки"></section>
+    <div class="setbar" id="setbar" aria-label="Наборы закладок"></div>
+  </div>
+</main>
+
+<dialog id="setNameDlg">
+  <form id="setNameForm" autocomplete="off">
+    <h2 id="setNameTitle">Новый набор</h2>
+    <label for="setNameIn">Название</label>
+    <input id="setNameIn" type="text" placeholder="Например: Работа" maxlength="24" required>
+    <div class="row">
+      <button type="button" class="btn" id="setDel" style="margin-right:auto" hidden>Удалить набор</button>
+      <button type="button" class="btn" id="setNameCancel">Отмена</button>
+      <button type="submit" class="btn primary">Сохранить</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg">
+  <form id="addform" autocomplete="off">
+    <h2>Новая закладка</h2>
+    <label for="url">Адрес сайта</label>
+    <input id="url" type="text" placeholder="example.com" inputmode="url" required>
+    <label for="name">Название (необязательно)</label>
+    <input id="name" type="text" placeholder="Возьму из адреса">
+    <div class="err" id="err" role="alert"></div>
+    <div class="row">
+      <button type="button" class="btn" id="cancel">Отмена</button>
+      <button type="submit" class="btn primary">Добавить</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="setDlg">
+  <h2>Оформление</h2>
+
+  <label id="modeLabel">Фон</label>
+  <div class="seg" id="mode" role="group" aria-labelledby="modeLabel">
+    <button type="button" data-val="sky">Небо</button>
+    <button type="button" data-val="gradient">Градиент</button>
+    <button type="button" data-val="image">Картинка</button>
+  </div>
+
+  <div data-mode="gradient">
+    <div class="pair">
+      <div><label for="topC">Сверху</label><input id="topC" type="color"></div>
+      <div><label for="botC">Снизу</label><input id="botC" type="color"></div>
+    </div>
+  </div>
+
+  <div data-mode="image">
+    <label>Картинка</label>
+    <div class="wallrow">
+      <button type="button" class="btn" id="pickWall">Выбрать…</button>
+      <button type="button" class="btn" id="clearWall">Убрать</button>
+      <span id="wallInfo"></span>
+    </div>
+    <input id="wallFile" type="file" accept="image/*" hidden>
+    <label for="dim">Затемнение</label>
+    <input id="dim" type="range" min="0" max="80" step="1">
+  </div>
+
+  <div class="sep"></div>
+  <label id="fcLabel">Шрифт часов</label>
+  <div class="seg wrap" id="fontClock" role="group" aria-labelledby="fcLabel"></div>
+  <label id="ftLabel">Шрифт текста</label>
+  <div class="seg wrap" id="fontText" role="group" aria-labelledby="ftLabel"></div>
+  <label>Свой шрифт</label>
+  <div class="wallrow">
+    <button type="button" class="btn" id="pickFont">Выбрать файл…</button>
+    <button type="button" class="btn" id="clearFont">Убрать</button>
+    <span id="fontInfo"></span>
+  </div>
+  <input id="fontFile" type="file" accept=".woff2,.woff,.ttf,.otf,font/*" hidden>
+
+  <div class="sep"></div>
+  <label id="wLabel">Виджеты</label>
+  <div class="seg" id="wToggles" role="group" aria-labelledby="wLabel">
+    <button type="button" data-w="weather">Погода</button>
+    <button type="button" data-w="tasks">Задачи</button>
+    <button type="button" data-w="timer">Таймер</button>
+  </div>
+  <label for="cityIn">Город для погоды</label>
+  <div class="wallrow">
+    <input id="cityIn" type="text" placeholder="Например: Париж" autocomplete="off">
+    <button type="button" class="btn" id="cityBtn">Найти</button>
+  </div>
+
+  <div class="err" id="setErr" role="alert"></div>
+  <div class="sep"></div>
+  <button type="button" class="btn full" id="editBtn" style="margin-bottom:10px">Режим перемещения элементов</button>
+  <a class="btn full" id="prefsBtn" href="about:preferences#home" target="_blank" rel="noopener">Настройки домашней страницы Waterfox</a>
+  <div class="row"><button type="button" class="btn primary" id="setClose">Готово</button></div>
+</dialog>
+
+<aside class="np" id="np" aria-label="Сейчас играет">
+  <div class="np-cover" id="npCover">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+  </div>
+  <div class="np-text">
+    <div class="np-title" id="npTitle"></div>
+    <div class="np-artist" id="npArtist"></div>
+    <div class="np-bar" id="npBar"><i id="npFill"></i></div>
+  </div>
+</aside>
+
+<div class="editbar" id="editbar" hidden>
+  <span>Перетаскивай элементы мышью</span>
+  <button type="button" class="btn" id="editReset">Сбросить</button>
+  <button type="button" class="btn primary" id="editDone">Готово</button>
+</div>
+
+<div class="chip" id="weather" hidden>
+  <span id="wIcon"></span><span id="wTemp"></span><span id="wCity"></span>
+</div>
+
+<section class="card" id="tasks" aria-label="Задачи">
+  <div class="card-title"><span>Задачи</span><span id="taskCount"></span></div>
+  <ul id="taskList"></ul>
+  <input id="taskIn" type="text" placeholder="Новая задача" autocomplete="off">
+</section>
+
+<section class="card" id="timer" aria-label="Таймер">
+  <div class="card-title" id="timerMode">Фокус</div>
+  <div class="timer-time" id="timerTime">
+    <span class="tpart" id="tmM" data-l="мин" tabindex="0" role="button" title="Минуты: клик, колёсико или стрелки ↑↓">25</span>
+    <span class="tcolon">:</span>
+    <span class="tpart" id="tmS" data-l="сек" tabindex="0" role="button" title="Секунды: клик, колёсико или стрелки ↑↓">00</span>
+  </div>
+  <div class="timer-bar"><i id="timerFill"></i></div>
+  <div class="timer-btns">
+    <button type="button" class="btn primary" id="timerToggle">Старт</button>
+    <button type="button" class="btn" id="timerReset">Сброс</button>
+    <button type="button" class="btn" id="timerSwitch">Перерыв</button>
+  </div>
+</section>
+
+<script>
+/* ============ НАСТРОЙКИ — меняй здесь ============ */
+const NAME = "";                       // например "Алекс" — или оставь пустым
+const DEFAULT_ENGINE = "https://duckduckgo.com/?q=";
+
+// Закладки, с которых всё начинается (потом добавляй и удаляй кнопками на странице)
+const DEFAULT_BOOKMARKS = [
+  { name: "YouTube",  url: "https://www.youtube.com" },
+  { name: "GitHub",   url: "https://github.com" },
+  { name: "Gmail",    url: "https://mail.google.com" },
+  { name: "Reddit",   url: "https://www.reddit.com" },
+  { name: "Telegram", url: "https://web.telegram.org" },
+];
+
+// Префикс + пробел перед запросом: "y котики" → поиск на YouTube
+const ENGINES = {
+  g:  "https://www.google.com/search?q=",
+  y:  "https://www.youtube.com/results?search_query=",
+  w:  "https://ru.wikipedia.org/w/index.php?search=",
+  gh: "https://github.com/search?q=",
+};
+
+// Адрес помощника nowplaying.py (должен совпадать с PORT в скрипте)
+const NOW_PLAYING_URL = "http://127.0.0.1:8765";
+
+// Откуда берутся иконки сайтов
+const ICON = host => `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=128`;
+/* ================================================== */
+
+/* ---------- Оформление (хранится в браузере) ---------- */
+const SETTINGS_KEY = "home.settings.v1";
+const WALL_KEY = "home.wallpaper.v1";
+const DEFAULT_SETTINGS = { mode: "sky", top: "#2b1055", bot: "#7597de", dim: 25, wallLum: 0.4, fontClock: "classic", fontText: "system", npPos: null, layout: {}, widgets: { weather: true, tasks: true, timer: true }, city: null, timerFocus: 25 * 60, timerRest: 5 * 60 };
+
+function loadSettings() {
+  try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY)) }; }
+  catch (e) { return { ...DEFAULT_SETTINGS }; }
+}
+function saveSettings() {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
+}
+let settings = loadSettings();
+// раньше блок закладок назывался "tiles" — переносим его положение
+if (settings.layout && settings.layout.tiles && !settings.layout.tilesWrap) {
+  settings.layout.tilesWrap = settings.layout.tiles;
+  delete settings.layout.tiles;
+}
+let wallpaper = null;
+try { wallpaper = localStorage.getItem(WALL_KEY); } catch (e) {}
+
+const FONT_KEY = "home.font.v1";
+let customFont = null;   // шрифт-файл как data URL
+let customFace = null;
+try { customFont = localStorage.getItem(FONT_KEY); } catch (e) {}
+
+const FONT_STACKS = {
+  classic: '"Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif',
+  modern:  '"Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif',
+  tech:    'Bahnschrift, "DIN Alternate", "Segoe UI", system-ui, sans-serif',
+  mono:    '"Cascadia Mono", Consolas, "SF Mono", ui-monospace, Menlo, monospace',
+  system:  'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  custom:  '"HomeCustom", system-ui, sans-serif',
+};
+
+function applyFonts() {
+  const r = document.documentElement.style;
+  const clock = settings.fontClock === "custom" && !customFont ? "classic" : settings.fontClock;
+  const text = settings.fontText === "custom" && !customFont ? "system" : settings.fontText;
+  r.setProperty("--serif", FONT_STACKS[clock] || FONT_STACKS.classic);
+  r.setProperty("--sans", FONT_STACKS[text] || FONT_STACKS.system);
+}
+
+async function registerCustomFont(url) {
+  const face = new FontFace("HomeCustom", `url("${url}")`);
+  await face.load();
+  if (customFace) document.fonts.delete(customFace);
+  document.fonts.add(face);
+  customFace = face;
+}
+
+const bgEl = document.getElementById("bg");
+let bgApplied = null;
+
+function usesSky() {
+  return !(settings.mode === "gradient" || (settings.mode === "image" && wallpaper));
+}
+function hexToRgb(h) {
+  return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+}
+function applyBackground() {
+  if (settings.mode === "image" && wallpaper) {
+    if (bgApplied !== wallpaper) {
+      bgEl.style.backgroundImage = `url("${wallpaper}")`;
+      bgApplied = wallpaper;
+    }
+    const dim = settings.dim / 100;
+    bgEl.style.setProperty("--dim", dim);
+    bgEl.classList.add("on");
+    setTheme([14, 18, 34], [14, 18, 34], settings.wallLum * (1 - dim));
+  } else {
+    bgEl.classList.remove("on");
+    if (settings.mode === "gradient") setTheme(hexToRgb(settings.top), hexToRgb(settings.bot));
+    else paintSky(new Date());
+  }
+}
+
+/* ---------- Небо ---------- */
+const SKY = [
+  [0,  [ 8, 11, 30], [ 22, 28, 62]],
+  [5,  [ 20, 24, 58], [ 96, 70, 110]],
+  [7,  [ 92, 120, 175], [244, 166, 130]],
+  [10, [ 88, 160, 224], [182, 223, 245]],
+  [15, [ 74, 144, 217], [170, 214, 240]],
+  [18, [ 60, 74, 140], [250, 140, 100]],
+  [20, [ 28, 30, 74], [112, 66, 112]],
+  [24, [ 8, 11, 30], [ 22, 28, 62]],
+];
+const lerp = (a, b, t) => a + (b - a) * t;
+const mix = (c1, c2, t) => c1.map((v, i) => Math.round(lerp(v, c2[i], t)));
+const rgb = c => `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+const lum = c => (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255;
+
+function paintSky(now) {
+  const h = now.getHours() + now.getMinutes() / 60;
+  let i = SKY.findIndex((s, k) => h >= s[0] && h < SKY[k + 1][0]);
+  if (i < 0) i = SKY.length - 2;
+  const [h0, t0, b0] = SKY[i], [h1, t1, b1] = SKY[i + 1];
+  const t = (h - h0) / (h1 - h0);
+  setTheme(mix(t0, t1, t), mix(b0, b1, t));
+}
+
+function setTheme(top, bot, brightness) {
+  const light = (brightness ?? lum(mix(top, bot, .5))) > .55;
+  const r = document.documentElement.style;
+  r.setProperty("--top", rgb(top));
+  r.setProperty("--bot", rgb(bot));
+  r.setProperty("--fg", light ? "#0d1b2e" : "#f4f1ff");
+  r.setProperty("--on-fg", light ? "#f4f1ff" : "#0d1b2e");
+  r.setProperty("--fg-soft", light ? "rgba(13, 27, 46, .66)" : "rgba(244, 241, 255, .62)");
+  r.setProperty("--glass", light ? "rgba(255, 255, 255, .38)" : "rgba(255, 255, 255, .10)");
+  r.setProperty("--glass-hover", light ? "rgba(255, 255, 255, .55)" : "rgba(255, 255, 255, .18)");
+  r.setProperty("--dlg", light ? "rgba(255, 255, 255, .86)" : "rgba(24, 28, 60, .88)");
+}
+
+function greeting(h) {
+  if (h < 5)  return "Доброй ночи";
+  if (h < 12) return "Доброе утро";
+  if (h < 18) return "Добрый день";
+  return "Добрый вечер";
+}
+
+function tick() {
+  const now = new Date();
+  const p = n => String(n).padStart(2, "0");
+  document.getElementById("time").textContent = `${p(now.getHours())}:${p(now.getMinutes())}`;
+  const date = now.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" });
+  const hi = greeting(now.getHours()) + (NAME ? ", " + NAME : "");
+  document.getElementById("hello").textContent = `${hi} · ${date}`;
+  document.title = `${p(now.getHours())}:${p(now.getMinutes())}`;
+  const day = Math.floor((now.getHours() * 60 + now.getMinutes()) / 1440 * 100);
+  const y0 = new Date(now.getFullYear(), 0, 1), y1 = new Date(now.getFullYear() + 1, 0, 1);
+  const year = Math.floor((now - y0) / (y1 - y0) * 100);
+  document.getElementById("prog").textContent = `День ${day}% · Год ${year}%`;
+  if (usesSky()) paintSky(now);
+}
+tick();
+setInterval(tick, 10000);
+applyBackground();
+applyFonts();
+if (customFont) registerCustomFont(customFont).catch(() => {});
+
+/* ---------- Закладки ---------- */
+const KEY = "home.bookmarks.v1";
+const tilesEl = document.getElementById("tiles");
+
+// Наборы закладок: несколько списков, между которыми можно переключаться
+const SETS_KEY = "home.sets.v1";
+function loadSets() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SETS_KEY));
+    if (raw && Array.isArray(raw.sets) && raw.sets.length) {
+      return { sets: raw.sets, active: Math.min(Math.max(raw.active || 0, 0), raw.sets.length - 1) };
+    }
+  } catch (e) {}
+  // старые закладки становятся первым набором
+  let items = DEFAULT_BOOKMARKS.slice();
+  try {
+    const old = JSON.parse(localStorage.getItem(KEY));
+    if (Array.isArray(old)) items = old;
+  } catch (e) {}
+  return { sets: [{ name: "Основное", items }], active: 0 };
+}
+let store = loadSets();
+const cur = () => store.sets[store.active].items;
+function save() {
+  try { localStorage.setItem(SETS_KEY, JSON.stringify(store)); } catch (e) {}
+}
+
+const setBar = document.getElementById("setbar");
+function switchSet(i, dir) {
+  store.active = (i + store.sets.length) % store.sets.length;
+  save();
+  render();
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    tilesEl.animate(
+      [{ opacity: 0, transform: `translateX(${dir * 24}px)` }, { opacity: 1, transform: "none" }],
+      { duration: 220, easing: "ease-out" }
+    );
+  }
+}
+function setBtn(text, title, onClick, cls) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = cls || "setbtn";
+  b.textContent = text;
+  b.title = title;
+  b.addEventListener("click", onClick);
+  return b;
+}
+function renderSetBar() {
+  setBar.replaceChildren();
+  const many = store.sets.length > 1;
+  if (many) setBar.appendChild(setBtn("‹", "Предыдущий набор", () => switchSet(store.active - 1, -1), "setround"));
+
+  const pill = document.createElement("div");
+  pill.className = "setpill";
+  store.sets.forEach((st, i) => {
+    const b = setBtn(st.name, "Набор «" + st.name + "»", () => { if (i !== store.active) switchSet(i, i > store.active ? 1 : -1); });
+    b.setAttribute("aria-pressed", String(i === store.active));
+    pill.appendChild(b);
+  });
+  setBar.appendChild(pill);
+
+  if (many) setBar.appendChild(setBtn("›", "Следующий набор", () => switchSet(store.active + 1, 1), "setround"));
+  setBar.appendChild(setBtn("+", "Новый набор", () => openSetDialog(false), "setround"));
+  setBar.appendChild(setBtn("✎", "Переименовать или удалить набор", () => openSetDialog(true), "setround"));
+}
+
+function hostOf(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return url; }
+}
+
+function makeTile(b, index) {
+  const wrap = document.createElement("div");
+  wrap.className = "tile";
+
+  const a = document.createElement("a");
+  a.href = b.url;
+  a.title = b.url;
+
+  const box = document.createElement("span");
+  box.className = "box";
+  const img = new Image();
+  img.alt = "";
+  img.src = ICON(hostOf(b.url));
+  img.onerror = () => {
+    const l = document.createElement("span");
+    l.className = "letter";
+    l.textContent = (b.name || hostOf(b.url)).charAt(0);
+    img.replaceWith(l);
+  };
+  box.appendChild(img);
+
+  const label = document.createElement("span");
+  label.className = "label";
+  label.textContent = b.name;
+
+  a.append(box, label);
+
+  const del = document.createElement("button");
+  del.className = "del";
+  del.type = "button";
+  del.textContent = "×";
+  del.setAttribute("aria-label", "Удалить " + b.name);
+  del.addEventListener("click", () => {
+    cur().splice(index, 1);
+    save();
+    render();
+  });
+
+  wrap.append(a, del);
+  return wrap;
+}
+
+function render() {
+  tilesEl.replaceChildren();
+  cur().forEach((b, i) => tilesEl.appendChild(makeTile(b, i)));
+
+  const wrap = document.createElement("div");
+  wrap.className = "tile";
+  const btn = document.createElement("button");
+  btn.className = "add";
+  btn.type = "button";
+  btn.innerHTML =
+    '<span class="box"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>' +
+    '<span class="label">Добавить</span>';
+  btn.addEventListener("click", openDialog);
+  wrap.appendChild(btn);
+  tilesEl.appendChild(wrap);
+  renderSetBar();
+}
+render();
+
+/* ---------- Окно добавления ---------- */
+const dlg = document.getElementById("dlg");
+const urlIn = document.getElementById("url");
+const nameIn = document.getElementById("name");
+const errEl = document.getElementById("err");
+
+function openDialog() {
+  urlIn.value = "";
+  nameIn.value = "";
+  errEl.textContent = "";
+  dlg.showModal();
+  urlIn.focus();
+}
+document.getElementById("cancel").addEventListener("click", () => dlg.close());
+dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+
+document.getElementById("addform").addEventListener("submit", e => {
+  e.preventDefault();
+  let raw = urlIn.value.trim();
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) raw = "https://" + raw;
+  let u;
+  try {
+    u = new URL(raw);
+    if (!/^https?:$/.test(u.protocol) || !u.hostname.includes(".")) throw 0;
+  } catch (err) {
+    errEl.textContent = "Не похоже на адрес сайта. Пример: example.com";
+    return;
+  }
+  const host = u.hostname.replace(/^www\./, "");
+  const fallback = host.split(".")[0];
+  cur().push({
+    name: nameIn.value.trim() || fallback.charAt(0).toUpperCase() + fallback.slice(1),
+    url: u.href,
+  });
+  save();
+  render();
+  dlg.close();
+});
+
+/* ---------- Окно набора закладок ---------- */
+const snd = document.getElementById("setNameDlg");
+const sndIn = document.getElementById("setNameIn");
+const sndDel = document.getElementById("setDel");
+let sndEdit = false;
+let sndArmed = false;
+
+function openSetDialog(edit) {
+  sndEdit = edit;
+  sndArmed = false;
+  document.getElementById("setNameTitle").textContent = edit ? "Набор закладок" : "Новый набор";
+  sndIn.value = edit ? store.sets[store.active].name : "";
+  sndDel.textContent = "Удалить набор";
+  sndDel.hidden = !(edit && store.sets.length > 1);
+  snd.showModal();
+  sndIn.focus();
+  sndIn.select();
+}
+document.getElementById("setNameCancel").addEventListener("click", () => snd.close());
+snd.addEventListener("click", e => {
+  const r = snd.getBoundingClientRect();
+  if (e.target === snd && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) snd.close();
+});
+document.getElementById("setNameForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = sndIn.value.trim();
+  if (!name) return;
+  if (sndEdit) {
+    store.sets[store.active].name = name;
+  } else {
+    store.sets.push({ name, items: [] });
+    store.active = store.sets.length - 1;
+  }
+  save();
+  render();
+  snd.close();
+});
+sndDel.addEventListener("click", () => {
+  if (!sndArmed) {  // удаляем только со второго нажатия
+    sndArmed = true;
+    sndDel.textContent = "Точно удалить?";
+    return;
+  }
+  store.sets.splice(store.active, 1);
+  store.active = Math.max(0, store.active - 1);
+  save();
+  render();
+  snd.close();
+});
+
+/* ---------- Окно оформления ---------- */
+const sd = document.getElementById("setDlg");
+const modeSel = document.getElementById("mode");
+const topC = document.getElementById("topC");
+const botC = document.getElementById("botC");
+const dimIn = document.getElementById("dim");
+const wallFile = document.getElementById("wallFile");
+const wallInfo = document.getElementById("wallInfo");
+const setErr = document.getElementById("setErr");
+const prefsBtn = document.getElementById("prefsBtn");
+const PREFS_URL = "about:preferences#home";
+
+function syncSettingsUI() {
+  modeSel.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.val === settings.mode)));
+  topC.value = settings.top;
+  botC.value = settings.bot;
+  dimIn.value = settings.dim;
+  sd.querySelectorAll("[data-mode]").forEach(el => { el.hidden = el.dataset.mode !== settings.mode; });
+  wallInfo.textContent = wallpaper ? "Картинка выбрана" : "Картинка не выбрана";
+  setErr.textContent = "";
+  renderFontChips();
+  renderWidgetChips();
+}
+
+/* ---------- Шрифты ---------- */
+const fcBox = document.getElementById("fontClock");
+const ftBox = document.getElementById("fontText");
+const fontFile = document.getElementById("fontFile");
+const fontInfo = document.getElementById("fontInfo");
+const CLOCK_OPTS = [["classic", "Классика"], ["modern", "Современный"], ["tech", "Техно"], ["mono", "Моно"], ["custom", "Свой"]];
+const TEXT_OPTS = [["system", "Системный"], ["classic", "С засечками"], ["mono", "Моно"], ["custom", "Свой"]];
+
+function fillChips(box, opts, current, key) {
+  box.replaceChildren();
+  opts.forEach(([val, label]) => {
+    if (val === "custom" && !customFont) return;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.val = val;
+    b.dataset.key = key;
+    b.textContent = label;
+    b.style.fontFamily = FONT_STACKS[val];
+    b.setAttribute("aria-pressed", String(val === current));
+    box.appendChild(b);
+  });
+}
+function renderFontChips() {
+  fillChips(fcBox, CLOCK_OPTS, settings.fontClock, "fontClock");
+  fillChips(ftBox, TEXT_OPTS, settings.fontText, "fontText");
+  fontInfo.textContent = customFont ? "Шрифт загружен" : "Файл не выбран";
+}
+
+[fcBox, ftBox].forEach(box => box.addEventListener("click", e => {
+  const b = e.target.closest("button[data-val]");
+  if (!b) return;
+  settings[b.dataset.key] = b.dataset.val;
+  saveSettings();
+  applyFonts();
+  renderFontChips();
+}));
+
+document.getElementById("pickFont").addEventListener("click", () => fontFile.click());
+document.getElementById("clearFont").addEventListener("click", () => {
+  customFont = null;
+  if (customFace) { document.fonts.delete(customFace); customFace = null; }
+  try { localStorage.removeItem(FONT_KEY); } catch (e) {}
+  if (settings.fontClock === "custom") settings.fontClock = "classic";
+  if (settings.fontText === "custom") settings.fontText = "system";
+  saveSettings();
+  applyFonts();
+  renderFontChips();
+});
+
+fontFile.addEventListener("change", () => {
+  const file = fontFile.files[0];
+  fontFile.value = "";
+  if (!file) return;
+  setErr.textContent = "";
+  if (file.size > 1500000) {
+    setErr.textContent = "Файл шрифта больше 1,5 МБ. Возьми .woff2: он заметно меньше.";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onerror = () => { setErr.textContent = "Не удалось прочитать файл."; };
+  reader.onload = async () => {
+    const url = reader.result;
+    try {
+      await registerCustomFont(url);
+    } catch (e) {
+      setErr.textContent = "Не получилось открыть шрифт. Подойдут файлы .woff2, .woff, .ttf, .otf.";
+      return;
+    }
+    try {
+      localStorage.setItem(FONT_KEY, url);
+    } catch (e) {
+      if (customFace) { document.fonts.delete(customFace); customFace = null; }
+      setErr.textContent = "Шрифт не поместился в хранилище браузера (там же лежит картинка фона). Попробуй файл поменьше.";
+      return;
+    }
+    customFont = url;
+    settings.fontClock = "custom";
+    saveSettings();
+    applyFonts();
+    renderFontChips();
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById("gear").addEventListener("click", () => { syncSettingsUI(); sd.showModal(); });
+document.getElementById("setClose").addEventListener("click", () => sd.close());
+sd.addEventListener("click", e => {
+  const r = sd.getBoundingClientRect();
+  if (e.target === sd && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) sd.close();
+});
+
+modeSel.addEventListener("click", e => {
+  const b = e.target.closest("button[data-val]");
+  if (!b) return;
+  settings.mode = b.dataset.val;
+  saveSettings();
+  syncSettingsUI();
+  applyBackground();
+  if (settings.mode === "image" && !wallpaper) setErr.textContent = "Выбери картинку кнопкой выше.";
+});
+topC.addEventListener("input", () => { settings.top = topC.value; saveSettings(); applyBackground(); });
+botC.addEventListener("input", () => { settings.bot = botC.value; saveSettings(); applyBackground(); });
+dimIn.addEventListener("input", () => { settings.dim = +dimIn.value; saveSettings(); applyBackground(); });
+
+document.getElementById("pickWall").addEventListener("click", () => wallFile.click());
+document.getElementById("clearWall").addEventListener("click", () => {
+  wallpaper = null;
+  try { localStorage.removeItem(WALL_KEY); } catch (e) {}
+  if (settings.mode === "image") settings.mode = "sky";
+  saveSettings();
+  syncSettingsUI();
+  applyBackground();
+});
+
+wallFile.addEventListener("change", () => {
+  const file = wallFile.files[0];
+  wallFile.value = "";
+  if (!file) return;
+  setErr.textContent = "";
+  const reader = new FileReader();
+  reader.onerror = () => { setErr.textContent = "Не удалось прочитать файл."; };
+  reader.onload = () => {
+    const img = new Image();
+    img.onerror = () => { setErr.textContent = "Это не похоже на картинку."; };
+    img.onload = () => {
+      // сжимаем до 1920 px, чтобы поместилось в хранилище браузера
+      const k = Math.min(1, 1920 / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * k);
+      c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      let url = "";
+      for (const q of [0.85, 0.7, 0.55, 0.4]) {
+        url = c.toDataURL("image/jpeg", q);
+        if (url.length < 2500000) break;
+      }
+      // средняя яркость — чтобы текст был читаемым
+      const s = document.createElement("canvas");
+      s.width = s.height = 24;
+      const sx = s.getContext("2d");
+      sx.drawImage(img, 0, 0, 24, 24);
+      const px = sx.getImageData(0, 0, 24, 24).data;
+      let sum = 0;
+      for (let i = 0; i < px.length; i += 4) sum += (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) / 255;
+      try {
+        localStorage.setItem(WALL_KEY, url);
+      } catch (e) {
+        setErr.textContent = "Картинка не поместилась в хранилище браузера. Попробуй файл поменьше.";
+        return;
+      }
+      wallpaper = url;
+      settings.wallLum = sum / (px.length / 4);
+      settings.mode = "image";
+      saveSettings();
+      syncSettingsUI();
+      applyBackground();
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// Сначала пробуем открыть настройки обычной ссылкой. Если браузер её не пропустил
+// (страница осталась на экране), копируем адрес, чтобы вставить в адресную строку.
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
+  const t = document.createElement("textarea");
+  t.value = text;
+  document.body.appendChild(t);
+  t.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (e) {}
+  t.remove();
+  return ok;
+}
+
+prefsBtn.addEventListener("click", () => {
+  let left = false;
+  const mark = () => { left = true; };
+  window.addEventListener("blur", mark);
+  document.addEventListener("visibilitychange", mark);
+  setTimeout(async () => {
+    window.removeEventListener("blur", mark);
+    document.removeEventListener("visibilitychange", mark);
+    if (left) return; // вкладка открылась
+    const old = "Настройки домашней страницы Waterfox";
+    const ok = await copyText(PREFS_URL);
+    prefsBtn.textContent = ok ? "Не открылось. Адрес скопирован: Ctrl+L, Ctrl+V, Enter" : "Не открылось. Вставь вручную: " + PREFS_URL;
+    setTimeout(() => { prefsBtn.textContent = old; }, 5000);
+  }, 800);
+});
+
+/* ---------- Сейчас играет ---------- */
+const np = {
+  box: document.getElementById("np"),
+  cover: document.getElementById("npCover"),
+  title: document.getElementById("npTitle"),
+  artist: document.getElementById("npArtist"),
+  bar: document.getElementById("npBar"),
+  fill: document.getElementById("npFill"),
+  data: null,
+  cover_id: -1,
+};
+
+async function pollNowPlaying() {
+  try {
+    const r = await fetch(NOW_PLAYING_URL + "/now", { cache: "no-store" });
+    np.data = await r.json();
+  } catch (e) {
+    np.data = null; // помощник не запущен
+  }
+  renderNowPlaying();
+}
+
+function renderNowPlaying() {
+  const d = np.data;
+  if (!d || !d.active) {
+    if (document.body.classList.contains("editing")) {
+      // в режиме перемещения показываем карточку-образец, чтобы её можно было двигать
+      np.box.classList.add("on");
+      np.box.classList.remove("paused");
+      np.title.textContent = "Название трека";
+      np.artist.textContent = "Исполнитель";
+      np.bar.style.visibility = "hidden";
+    } else {
+      np.box.classList.remove("on");
+    }
+    return;
+  }
+  np.box.classList.add("on");
+  np.box.classList.toggle("paused", !d.playing);
+  np.title.textContent = d.title || "Без названия";
+  np.artist.textContent = d.artist || d.album || "";
+
+  if (np.cover_id !== d.cover) {
+    np.cover_id = d.cover;
+    if (d.has_cover) {
+      np.cover.style.backgroundImage = `url("${NOW_PLAYING_URL}/cover?v=${d.cover}")`;
+      np.cover.classList.add("has-img");
+    } else {
+      np.cover.style.backgroundImage = "none";
+      np.cover.classList.remove("has-img");
+    }
+  }
+
+  if (d.duration > 0) {
+    let pos = d.position;
+    if (d.playing) pos += Date.now() / 1000 - d.updated;
+    np.fill.style.width = Math.min(100, Math.max(0, (pos / d.duration) * 100)) + "%";
+    np.bar.style.visibility = "visible";
+  } else {
+    np.bar.style.visibility = "hidden";
+  }
+}
+
+pollNowPlaying();
+setInterval(pollNowPlaying, 1500);
+setInterval(renderNowPlaying, 500);
+
+/* ---------- Перетаскивание карточки ---------- */
+// Положение хранится в долях окна (0..1), поэтому при смене размера окна карточка остаётся на месте по смыслу
+function npSize() {
+  return [np.box.offsetWidth || Math.min(600, innerWidth - 56), np.box.offsetHeight || 176];
+}
+function applyNpPos() {
+  const st = np.box.style;
+  if (!settings.npPos) { st.left = st.top = st.bottom = ""; return; }
+  const [w, h] = npSize();
+  st.left = Math.round(settings.npPos.x * Math.max(0, innerWidth - w)) + "px";
+  st.top = Math.round(settings.npPos.y * Math.max(0, innerHeight - h)) + "px";
+  st.bottom = "auto";
+}
+
+let drag = null;
+np.box.addEventListener("pointerdown", e => {
+  if (e.button !== 0) return;
+  const r = np.box.getBoundingClientRect();
+  drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+  np.box.setPointerCapture(e.pointerId);
+  np.box.classList.add("dragging");
+});
+np.box.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const [w, h] = npSize();
+  const x = Math.min(Math.max(0, e.clientX - drag.dx), Math.max(0, innerWidth - w));
+  const y = Math.min(Math.max(0, e.clientY - drag.dy), Math.max(0, innerHeight - h));
+  np.box.style.left = x + "px";
+  np.box.style.top = y + "px";
+  np.box.style.bottom = "auto";
+  drag.x = x;
+  drag.y = y;
+});
+function endDrag() {
+  if (!drag) return;
+  np.box.classList.remove("dragging");
+  if (drag.x !== undefined) {
+    const [w, h] = npSize();
+    settings.npPos = {
+      x: drag.x / Math.max(1, innerWidth - w),
+      y: drag.y / Math.max(1, innerHeight - h),
+    };
+    saveSettings();
+  }
+  drag = null;
+}
+np.box.addEventListener("pointerup", endDrag);
+np.box.addEventListener("pointercancel", endDrag);
+// двойной клик возвращает карточку на место
+np.box.addEventListener("dblclick", () => { settings.npPos = null; saveSettings(); applyNpPos(); });
+/* ---------- Режим перемещения всех элементов ---------- */
+// Каждый элемент сдвигается относительно своего обычного места; сдвиг хранится в долях окна
+const MOVABLE = ["elClock", "form", "tilesWrap", "weather", "tasks", "timer"];
+const editbar = document.getElementById("editbar");
+
+function applyLayout() {
+  MOVABLE.forEach(id => {
+    const el = document.getElementById(id);
+    const o = settings.layout[id];
+    el.style.translate = o ? `${Math.round(o.x * innerWidth)}px ${Math.round(o.y * innerHeight)}px` : "";
+  });
+  applyNpPos();
+}
+
+function setEditing(on) {
+  document.body.classList.toggle("editing", on);
+  editbar.hidden = !on;
+  if (on && document.activeElement) document.activeElement.blur();
+  renderNowPlaying();
+}
+
+MOVABLE.forEach(id => {
+  const el = document.getElementById(id);
+  el.setAttribute("data-move", "");
+  let st = null;
+
+  el.addEventListener("pointerdown", e => {
+    if (!document.body.classList.contains("editing") || e.button !== 0) return;
+    const o = settings.layout[id] || { x: 0, y: 0 };
+    const r = el.getBoundingClientRect();
+    st = {
+      px: e.clientX, py: e.clientY,
+      ox: o.x * innerWidth, oy: o.y * innerHeight,
+      minX: -r.left, maxX: innerWidth - r.right,
+      minY: -r.top, maxY: innerHeight - r.bottom,
+    };
+    el.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  el.addEventListener("pointermove", e => {
+    if (!st) return;
+    const dx = Math.min(Math.max(e.clientX - st.px, st.minX), st.maxX);
+    const dy = Math.min(Math.max(e.clientY - st.py, st.minY), st.maxY);
+    st.nx = st.ox + dx;
+    st.ny = st.oy + dy;
+    el.style.translate = `${st.nx}px ${st.ny}px`;
+  });
+  const end = () => {
+    if (!st) return;
+    if (st.nx !== undefined) {
+      settings.layout[id] = { x: st.nx / innerWidth, y: st.ny / innerHeight };
+      saveSettings();
+    }
+    st = null;
+  };
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
+});
+
+document.getElementById("editBtn").addEventListener("click", () => { sd.close(); setEditing(true); });
+document.getElementById("editDone").addEventListener("click", () => setEditing(false));
+document.getElementById("editReset").addEventListener("click", () => {
+  settings.layout = {};
+  settings.npPos = null;
+  saveSettings();
+  applyLayout();
+});
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && document.body.classList.contains("editing")) setEditing(false);
+});
+
+addEventListener("resize", applyLayout);
+applyLayout();
+
+/* ---------- Виджеты: погода, задачи, таймер ---------- */
+const wToggles = document.getElementById("wToggles");
+const cityIn = document.getElementById("cityIn");
+
+function renderWidgetChips() {
+  wToggles.querySelectorAll("button").forEach(b =>
+    b.setAttribute("aria-pressed", String(!!settings.widgets[b.dataset.w])));
+  cityIn.value = settings.city ? settings.city.name : "";
+}
+function applyWidgets() {
+  ["tasks", "timer"].forEach(k => { document.getElementById(k).hidden = !settings.widgets[k]; });
+  loadWeather();
+}
+wToggles.addEventListener("click", e => {
+  const b = e.target.closest("button[data-w]");
+  if (!b) return;
+  settings.widgets[b.dataset.w] = !settings.widgets[b.dataset.w];
+  saveSettings();
+  renderWidgetChips();
+  applyWidgets();
+});
+
+// Погода (open-meteo.com, без ключей; нужен интернет)
+const wEl = document.getElementById("weather");
+function weatherIcon(c) {
+  if (c === 0) return "☀️";
+  if (c <= 2) return "🌤️";
+  if (c === 3) return "☁️";
+  if (c <= 48) return "🌫️";
+  if (c <= 57) return "🌦️";
+  if (c <= 67) return "🌧️";
+  if (c <= 77) return "🌨️";
+  if (c <= 82) return "🌧️";
+  if (c <= 86) return "🌨️";
+  return "⛈️";
+}
+async function loadWeather() {
+  const c = settings.city;
+  if (!c || !settings.widgets.weather) { wEl.hidden = true; return; }
+  try {
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current=temperature_2m,weather_code&timezone=auto`);
+    const cur = (await r.json()).current;
+    document.getElementById("wIcon").textContent = weatherIcon(cur.weather_code);
+    document.getElementById("wTemp").textContent = Math.round(cur.temperature_2m) + "°";
+    document.getElementById("wCity").textContent = c.name;
+    wEl.hidden = false;
+  } catch (e) {
+    wEl.hidden = true;
+  }
+}
+document.getElementById("cityBtn").addEventListener("click", async () => {
+  const name = cityIn.value.trim();
+  setErr.textContent = "";
+  if (!name) { settings.city = null; saveSettings(); loadWeather(); return; }
+  try {
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=ru&format=json`);
+    const hit = ((await r.json()).results || [])[0];
+    if (!hit) { setErr.textContent = "Город не найден."; return; }
+    settings.city = { name: hit.name, lat: hit.latitude, lon: hit.longitude };
+    settings.widgets.weather = true;
+    saveSettings();
+    renderWidgetChips();
+    loadWeather();
+  } catch (e) {
+    setErr.textContent = "Не удалось найти город (нужен интернет).";
+  }
+});
+cityIn.addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("cityBtn").click(); });
+setInterval(loadWeather, 15 * 60 * 1000);
+
+// Задачи
+const TASKS_KEY = "home.tasks.v1";
+let tasks = [];
+try { tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || []; } catch (e) {}
+const taskList = document.getElementById("taskList");
+const taskIn = document.getElementById("taskIn");
+function saveTasks() { try { localStorage.setItem(TASKS_KEY, JSON.stringify(tasks)); } catch (e) {} }
+function renderTasks() {
+  taskList.replaceChildren();
+  tasks.forEach((t, i) => {
+    const li = document.createElement("li");
+    li.className = "task" + (t.done ? " done" : "");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = !!t.done;
+    cb.setAttribute("aria-label", "Готово");
+    cb.addEventListener("change", () => { t.done = cb.checked; saveTasks(); renderTasks(); });
+    const sp = document.createElement("span");
+    sp.textContent = t.text;
+    const del = document.createElement("button");
+    del.type = "button";
+    del.textContent = "×";
+    del.setAttribute("aria-label", "Удалить задачу");
+    del.addEventListener("click", () => { tasks.splice(i, 1); saveTasks(); renderTasks(); });
+    li.append(cb, sp, del);
+    taskList.appendChild(li);
+  });
+  if (!tasks.length) {
+    const e = document.createElement("li");
+    e.className = "empty";
+    e.textContent = "Пока пусто. Добавь первую задачу.";
+    taskList.appendChild(e);
+  }
+  document.getElementById("taskCount").textContent = tasks.length ? `${tasks.filter(t => t.done).length}/${tasks.length}` : "";
+}
+taskIn.addEventListener("keydown", e => {
+  if (e.key === "Enter" && taskIn.value.trim()) {
+    tasks.push({ text: taskIn.value.trim(), done: false });
+    taskIn.value = "";
+    saveTasks();
+    renderTasks();
+  }
+});
+renderTasks();
+
+// Таймер: фокус 25 минут / перерыв 5
+const DUR = { focus: settings.timerFocus || 25 * 60, rest: settings.timerRest || 5 * 60 };
+const timer = { mode: "focus", left: DUR.focus, running: false, end: 0 };
+const tFmt = n => String(Math.floor(n / 60)).padStart(2, "0") + ":" + String(n % 60).padStart(2, "0");
+function renderTimer() {
+  const mEl = document.getElementById("tmM"), sEl = document.getElementById("tmS");
+  if (!mEl.querySelector("input")) mEl.textContent = String(Math.floor(timer.left / 60)).padStart(2, "0");
+  if (!sEl.querySelector("input")) sEl.textContent = String(timer.left % 60).padStart(2, "0");
+  document.getElementById("timerMode").textContent = timer.mode === "focus" ? "Фокус" : "Перерыв";
+  document.getElementById("timerToggle").textContent = timer.running ? "Пауза" : "Старт";
+  document.getElementById("timerSwitch").textContent = timer.mode === "focus" ? "Перерыв" : "Фокус";
+  document.getElementById("timer").classList.toggle("running", timer.running);
+  document.getElementById("timerFill").style.width = (100 * (1 - timer.left / DUR[timer.mode])) + "%";
+}
+function beep() {
+  try {
+    const ctx = new AudioContext();
+    [0, 0.28, 0.56].forEach(t => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = 880;
+      o.connect(g);
+      g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.15, ctx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.22);
+      o.start(ctx.currentTime + t);
+      o.stop(ctx.currentTime + t + 0.24);
+    });
+  } catch (e) {}
+}
+function setTimerMode(m) {
+  timer.mode = m;
+  timer.running = false;
+  timer.left = DUR[m];
+}
+document.getElementById("timerToggle").addEventListener("click", () => {
+  if (timer.running) {
+    timer.running = false;
+  } else {
+    timer.end = Date.now() + timer.left * 1000;
+    timer.running = true;
+  }
+  renderTimer();
+});
+document.getElementById("timerReset").addEventListener("click", () => { setTimerMode(timer.mode); renderTimer(); });
+document.getElementById("timerSwitch").addEventListener("click", () => { setTimerMode(timer.mode === "focus" ? "rest" : "focus"); renderTimer(); });
+// Минуты и секунды правятся отдельно: клик по числу, колёсико мыши или стрелки ↑↓
+function getParts() {
+  const t = DUR[timer.mode];
+  return { m: Math.floor(t / 60), s: t % 60 };
+}
+function setDuration(sec) {
+  if (!(sec >= 1 && sec <= 600 * 60)) return false;
+  DUR[timer.mode] = sec;
+  settings[timer.mode === "focus" ? "timerFocus" : "timerRest"] = sec;
+  saveSettings();
+  setTimerMode(timer.mode);
+  return true;
+}
+function nudge(which, dir) {
+  if (timer.running) return;
+  if (setDuration(DUR[timer.mode] + dir * (which === "m" ? 60 : 5))) renderTimer();
+}
+function editPart(which) {
+  const el = document.getElementById(which === "m" ? "tmM" : "tmS");
+  if (el.querySelector("input")) return;
+  timer.running = false;
+  renderTimer();
+  const inp = document.createElement("input");
+  inp.type = "text";
+  inp.inputMode = "numeric";
+  inp.className = "timer-edit";
+  inp.value = String(getParts()[which]).padStart(2, "0");
+  inp.setAttribute("aria-label", which === "m" ? "Минуты" : "Секунды");
+  el.textContent = "";
+  el.appendChild(inp);
+  inp.focus();
+  inp.select();
+
+  let done = false;
+  const finish = ok => {
+    if (done) return;
+    done = true;
+    const n = parseInt(inp.value, 10);
+    if (ok && !isNaN(n)) {
+      const p = getParts();
+      setDuration(which === "m" ? n * 60 + p.s : p.m * 60 + n);  // 90 секунд превратятся в 1:30
+    }
+    el.textContent = "";
+    renderTimer();
+  };
+  inp.addEventListener("input", () => { inp.value = inp.value.replace(/\D/g, "").slice(0, 3); });
+  inp.addEventListener("keydown", e => {
+    if (e.key === "Enter") finish(true);
+    else if (e.key === "Escape") finish(false);
+    else if (e.key === "Tab" && !e.shiftKey && which === "m") { e.preventDefault(); finish(true); editPart("s"); }
+    else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const n = (parseInt(inp.value, 10) || 0) + (e.key === "ArrowUp" ? 1 : -1) * (which === "m" ? 1 : 5);
+      inp.value = String(Math.min(Math.max(n, 0), which === "m" ? 600 : 59)).padStart(2, "0");
+    }
+  });
+  inp.addEventListener("blur", () => finish(true));
+}
+[["tmM", "m"], ["tmS", "s"]].forEach(([id, which]) => {
+  const el = document.getElementById(id);
+  el.addEventListener("click", () => editPart(which));
+  el.addEventListener("keydown", e => {
+    if (e.target !== el) return;
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); editPart(which); }
+    else if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); nudge(which, e.key === "ArrowUp" ? 1 : -1); }
+  });
+  el.addEventListener("wheel", e => {
+    if (el.querySelector("input")) return;
+    e.preventDefault();
+    nudge(which, e.deltaY < 0 ? 1 : -1);
+  }, { passive: false });
+});
+
+setInterval(() => {
+  if (!timer.running) return;
+  timer.left = Math.max(0, Math.round((timer.end - Date.now()) / 1000));
+  if (timer.left === 0) {
+    beep();
+    setTimerMode(timer.mode === "focus" ? "rest" : "focus");
+  }
+  renderTimer();
+}, 250);
+renderTimer();
+
+applyWidgets();
+
+/* ---------- Поиск / переход по адресу ---------- */
+const q = document.getElementById("q");
+
+// Калькулятор: набери 2+2*3 — результат появится справа, Enter подставит его в строку
+const calcEl = document.getElementById("calc");
+let calcResult = null;
+function updateCalc() {
+  calcResult = null;
+  const raw = q.value.trim();
+  if (/^[\d\s+\-*/().,^]+$/.test(raw) && /\d/.test(raw) && /[+\-*/^]/.test(raw.replace(/^\s*-/, ""))) {
+    try {
+      const v = Function('"use strict"; return (' + raw.replace(/,/g, ".").replace(/\^/g, "**") + ")")();
+      if (typeof v === "number" && isFinite(v)) calcResult = Number(v.toPrecision(12));
+    } catch (e) {}
+  }
+  calcEl.textContent = calcResult === null ? "" : "= " + calcResult;
+}
+q.addEventListener("input", updateCalc);
+document.getElementById("form").addEventListener("submit", e => {
+  e.preventDefault();
+  const text = q.value.trim();
+  if (!text) return;
+  if (calcResult !== null) {
+    q.value = String(calcResult);
+    updateCalc();
+    q.select();
+    return;
+  }
+
+  const [first, ...rest] = text.split(/\s+/);
+  if (ENGINES[first] && rest.length) {
+    location.href = ENGINES[first] + encodeURIComponent(rest.join(" "));
+    return;
+  }
+  if (/^https?:\/\//i.test(text)) {
+    location.href = text;
+    return;
+  }
+  if (!/\s/.test(text) && /^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(text)) {
+    location.href = "https://" + text;
+    return;
+  }
+  location.href = DEFAULT_ENGINE + encodeURIComponent(text);
+});
+
+// "/" — быстро перейти в поиск
+addEventListener("keydown", e => {
+  if (e.key === "/" && !dlg.open && !sd.open && document.activeElement.tagName !== "INPUT") {
+    e.preventDefault();
+    q.focus();
+  }
+});
+</script>
+</body>
+</html>
