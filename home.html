@@ -418,7 +418,40 @@
     text-align: center; outline: 0;
   }
   .card .btn { height: 36px; padding: 0 14px; font-size: 14px; }
-  @media (max-width: 1400px), (max-height: 700px) { .card { display: none; } }
+  .note { margin-top: 10px; font-size: 12.5px; line-height: 1.4; color: var(--fg-soft); }
+
+  /* ---------- ИИ-чат ---------- */
+  #chat { left: 28px; right: auto; top: 84px; width: 340px; height: min(460px, calc(100vh - 340px)); display: flex; flex-direction: column; }
+  .mini {
+    border: 0; border-radius: 999px; padding: 3px 10px;
+    background: rgba(127, 127, 127, .2); color: var(--fg-soft);
+    font: 500 11.5px var(--sans); letter-spacing: .02em; text-transform: none; cursor: pointer;
+  }
+  .mini:hover { color: var(--fg); background: rgba(127, 127, 127, .34); }
+  .chat-log { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 2px 2px 8px; overflow-y: auto; }
+  .msg { max-width: 88%; padding: 8px 12px; border-radius: 16px; font-size: 14px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.user { align-self: flex-end; background: var(--fg); color: var(--on-fg); border-bottom-right-radius: 6px; }
+  .msg.bot { align-self: flex-start; background: rgba(127, 127, 127, .22); border-bottom-left-radius: 6px; }
+  .msg.err { align-self: stretch; max-width: 100%; background: rgba(255, 90, 90, .2); font-size: 13px; }
+  .chat-form { display: flex; gap: 8px; margin-top: 8px; }
+  #chatIn { flex: 1; min-width: 0; height: 38px; padding: 0 12px; border-radius: 12px; background: var(--glass); border: 1px solid rgba(255, 255, 255, .14); font-size: 14px; }
+  #chatIn:focus { border-color: var(--fg-soft); }
+  #chatSend { flex: none; width: 44px; height: 38px; padding: 0; font-size: 16px; }
+
+  /* ---------- Изменение размера в режиме перемещения ---------- */
+  #elClock, #tilesWrap { position: relative; }
+  .np { transform-origin: 0 0; }
+  .rsz {
+    display: none; position: absolute; right: -9px; bottom: -9px; z-index: 4;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--fg); box-shadow: 0 2px 10px rgba(0, 0, 0, .4);
+    cursor: nwse-resize; touch-action: none;
+    scale: calc(1 / var(--s, 1));
+  }
+  .editing .rsz { display: block; }
+  .editing [data-move] .rsz { pointer-events: auto; }
+
+  @media (max-width: 1400px), (max-height: 700px) { .card, #tasks, #chat { display: none; } }
 
   /* ---------- Меню-кнопки справа вверху ---------- */
   .dock { position: fixed; top: 20px; right: 20px; z-index: 3; display: flex; gap: 10px; }
@@ -498,27 +531,41 @@
   .toast.show { opacity: 1; translate: -50% 0; }
 
   /* ---------- Liquid glass ---------- */
+  /* Прозрачное стекло с яркой кромкой: свет бликует сверху-слева и снизу-справа, середина почти чистая */
+  html.liquid :is(.search, .box, .gear, .setpill, .setround) { position: relative; }
   html.liquid :is(.search, .box, .card, .np, .chip, .gear, .setpill, .setround) {
-    -webkit-backdrop-filter: blur(var(--blur)) saturate(1.7) brightness(1.05);
-    backdrop-filter: blur(var(--blur)) saturate(1.7) brightness(1.05);
-    background-image: linear-gradient(135deg,
-      rgba(255, 255, 255, calc(.26 * var(--k))) 0%,
-      rgba(255, 255, 255, calc(.03 * var(--k))) 42%,
-      rgba(255, 255, 255, calc(.13 * var(--k))) 100%);
-    border-color: rgba(255, 255, 255, .30);
+    -webkit-backdrop-filter: blur(calc(var(--blur) * 1.4)) saturate(1.9) brightness(1.04);
+    backdrop-filter: blur(calc(var(--blur) * 1.4)) saturate(1.9) brightness(1.04);
+    background-image: none;
+    border-color: transparent;
     box-shadow:
-      inset 0 1.5px 1px rgba(255, 255, 255, .60),
-      inset 0 -1px 1px rgba(255, 255, 255, .16),
-      inset 1px 0 1px rgba(255, 255, 255, .26),
-      inset -1px 0 1px rgba(255, 255, 255, .12),
-      inset 0 0 24px rgba(255, 255, 255, .07),
-      0 14px 34px rgba(0, 0, 0, .20);
+      inset 3px 4px 12px -6px rgba(255, 255, 255, .55),
+      inset -3px -4px 12px -6px rgba(255, 255, 255, .28),
+      0 10px 34px rgba(0, 0, 0, .16),
+      0 2px 6px rgba(0, 0, 0, .08);
+  }
+  html.liquid :is(.search, .box, .card, .np, .chip, .gear, .setpill, .setround)::before {
+    content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1.5px; pointer-events: none;
+    background: linear-gradient(135deg,
+      rgba(255, 255, 255, .95) 0%,
+      rgba(255, 255, 255, .14) 26%,
+      rgba(255, 255, 255, .03) 54%,
+      rgba(255, 255, 255, .16) 78%,
+      rgba(255, 255, 255, .70) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
+  html.liquid :is(.search, .box, .card, .np, .chip, .gear, .setpill, .setround)::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(130% 90% at 16% -12%, rgba(255, 255, 255, .17), transparent 56%);
   }
   html.liquid .search:focus-within {
     box-shadow:
-      inset 0 1.5px 1px rgba(255, 255, 255, .75),
-      inset 0 0 30px rgba(255, 255, 255, .12),
-      0 18px 44px rgba(0, 0, 0, .26);
+      inset 3px 4px 14px -6px rgba(255, 255, 255, .75),
+      inset -3px -4px 14px -6px rgba(255, 255, 255, .4),
+      0 16px 44px rgba(0, 0, 0, .24);
   }
 
   /* ---------- Немного красоты ---------- */
@@ -762,6 +809,7 @@
         <button type="button" class="sw" role="switch" data-w="weather"><span class="sw-ico">☁️</span><span class="sw-name">Погода</span><span class="sw-knob"></span></button>
         <button type="button" class="sw" role="switch" data-w="tasks"><span class="sw-ico">✅</span><span class="sw-name">Задачи</span><span class="sw-knob"></span></button>
         <button type="button" class="sw" role="switch" data-w="timer"><span class="sw-ico">⏱️</span><span class="sw-name">Таймер</span><span class="sw-knob"></span></button>
+        <button type="button" class="sw" role="switch" data-w="chat"><span class="sw-ico">💬</span><span class="sw-name">ИИ-чат</span><span class="sw-knob"></span></button>
       </div>
     </section>
 
@@ -774,6 +822,24 @@
       <ul class="citylist" id="cityList" hidden></ul>
       <div class="cur" id="cityCur"></div>
       <div class="err" id="cityErr" role="alert"></div>
+    </section>
+
+    <section class="panel">
+      <h3>ИИ-чат</h3>
+      <div class="seg" id="aiFormat" role="group" aria-label="Формат API">
+        <button type="button" data-f="openai">OpenAI</button>
+        <button type="button" data-f="anthropic">Anthropic</button>
+        <button type="button" data-f="ollama">Ollama</button>
+      </div>
+      <label for="aiUrl">Адрес API (endpoint)</label>
+      <input id="aiUrl" type="text" placeholder="https://api.openai.com/v1/chat/completions" spellcheck="false" autocomplete="off">
+      <label for="aiKey">Ключ API</label>
+      <input id="aiKey" type="password" placeholder="sk-…" autocomplete="off">
+      <label for="aiModel">Модель</label>
+      <input id="aiModel" type="text" placeholder="например: gpt-4o-mini" spellcheck="false" autocomplete="off">
+      <label for="aiSys">Системная инструкция (необязательно)</label>
+      <input id="aiSys" type="text" placeholder="Отвечай кратко" autocomplete="off">
+      <div class="note">«OpenAI» подходит для всего, что умеет /chat/completions (OpenRouter, Groq, LM Studio и т.д.). Ключ хранится только в этом браузере и уходит только на указанный адрес. Включи виджет «ИИ-чат» выше.</div>
     </section>
   </div>
 </dialog>
@@ -790,7 +856,7 @@
 </aside>
 
 <div class="editbar" id="editbar" hidden>
-  <span>Перетаскивай элементы мышью</span>
+  <span>Тяни элементы · кружок в углу меняет размер</span>
   <button type="button" class="btn" id="editReset">Сбросить</button>
   <button type="button" class="btn primary" id="editDone">Готово</button>
 </div>
@@ -818,6 +884,15 @@
     <button type="button" class="btn" id="timerReset">Сброс</button>
     <button type="button" class="btn" id="timerSwitch">Перерыв</button>
   </div>
+</section>
+
+<section class="card" id="chat" aria-label="ИИ-чат" hidden>
+  <div class="card-title"><span>ИИ-чат</span><button type="button" class="mini" id="chatClear" title="Очистить диалог">Очистить</button></div>
+  <div class="chat-log" id="chatLog" aria-live="polite"></div>
+  <form class="chat-form" id="chatForm" autocomplete="off">
+    <input id="chatIn" type="text" placeholder="Напиши сообщение…" aria-label="Сообщение">
+    <button type="submit" class="btn primary" id="chatSend" aria-label="Отправить">→</button>
+  </form>
 </section>
 
 <script>
@@ -852,7 +927,7 @@ const ICON = host => `https://www.google.com/s2/favicons?domain=${encodeURICompo
 /* ---------- Оформление (хранится в браузере) ---------- */
 const SETTINGS_KEY = "home.settings.v1";
 const WALL_KEY = "home.wallpaper.v1";
-const DEFAULT_SETTINGS = { mode: "sky", top: "#2b1055", bot: "#7597de", dim: 25, wallLum: 0.4, fontClock: "classic", fontText: "system", npPos: null, layout: {}, widgets: { weather: true, tasks: true, timer: true }, city: null, timerFocus: 25 * 60, timerRest: 5 * 60, glassStyle: "liquid", glassTransp: 50, blur: 14 };
+const DEFAULT_SETTINGS = { mode: "sky", top: "#2b1055", bot: "#7597de", dim: 25, wallLum: 0.4, fontClock: "classic", fontText: "system", npPos: null, layout: {}, scales: {}, ai: { format: "openai", url: "", key: "", model: "", system: "" }, widgets: { weather: true, tasks: true, timer: true, chat: false }, city: null, timerFocus: 25 * 60, timerRest: 5 * 60, glassStyle: "liquid", glassTransp: 50, blur: 14 };
 
 function loadSettings() {
   try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY)) }; }
@@ -1619,7 +1694,8 @@ setInterval(renderNowPlaying, 500);
 /* ---------- Перетаскивание карточки ---------- */
 // Положение хранится в долях окна (0..1), поэтому при смене размера окна карточка остаётся на месте по смыслу
 function npSize() {
-  return [np.box.offsetWidth || Math.min(600, innerWidth - 56), np.box.offsetHeight || 176];
+  const k = settings.scales.np || 1;
+  return [(np.box.offsetWidth || Math.min(600, innerWidth - 56)) * k, (np.box.offsetHeight || 176) * k];
 }
 function applyNpPos() {
   const st = np.box.style;
@@ -1668,7 +1744,7 @@ np.box.addEventListener("pointercancel", endDrag);
 np.box.addEventListener("dblclick", () => { settings.npPos = null; saveSettings(); applyNpPos(); });
 /* ---------- Режим перемещения всех элементов ---------- */
 // Каждый элемент сдвигается относительно своего обычного места; сдвиг хранится в долях окна
-const MOVABLE = ["elClock", "form", "tilesWrap", "weather", "tasks", "timer"];
+const MOVABLE = ["elClock", "form", "tilesWrap", "weather", "tasks", "timer", "chat"];
 const editbar = document.getElementById("editbar");
 
 function applyLayout() {
@@ -1730,8 +1806,10 @@ document.getElementById("editDone").addEventListener("click", () => setEditing(f
 document.getElementById("editReset").addEventListener("click", () => {
   settings.layout = {};
   settings.npPos = null;
+  settings.scales = {};
   saveSettings();
   applyLayout();
+  applyScales();
 });
 addEventListener("keydown", e => {
   if (e.key === "Escape" && document.body.classList.contains("editing")) setEditing(false);
@@ -1739,6 +1817,54 @@ addEventListener("keydown", e => {
 
 addEventListener("resize", applyLayout);
 applyLayout();
+
+/* ---------- Изменение размера (кружок в углу, виден в режиме перемещения) ---------- */
+const SCALABLE = [...MOVABLE, "np"];
+function applyScale(el, k) {
+  el.style.scale = k === 1 ? "" : String(k);
+  el.style.setProperty("--s", k);
+}
+function applyScales() {
+  SCALABLE.forEach(id => applyScale(document.getElementById(id), settings.scales[id] || 1));
+  applyNpPos();
+}
+SCALABLE.forEach(id => {
+  const el = document.getElementById(id);
+  const h = document.createElement("span");
+  h.className = "rsz";
+  h.setAttribute("aria-hidden", "true");
+  h.title = "Тяни, чтобы изменить размер. Двойной клик — вернуть как было";
+  el.appendChild(h);
+
+  let st = null;
+  h.addEventListener("pointerdown", e => {
+    e.stopPropagation();
+    e.preventDefault();
+    const r = el.getBoundingClientRect();
+    st = { x: e.clientX, y: e.clientY, k0: settings.scales[id] || 1, size: (r.width + r.height) / 2 };
+    h.setPointerCapture(e.pointerId);
+  });
+  h.addEventListener("pointermove", e => {
+    if (!st) return;
+    const grow = ((e.clientX - st.x) + (e.clientY - st.y)) / 2;
+    st.k = Math.min(2.5, Math.max(0.5, st.k0 * (1 + grow / st.size)));
+    applyScale(el, st.k);
+  });
+  const end = () => {
+    if (!st) return;
+    if (st.k) { settings.scales[id] = +st.k.toFixed(3); saveSettings(); }
+    st = null;
+  };
+  h.addEventListener("pointerup", end);
+  h.addEventListener("pointercancel", end);
+  h.addEventListener("dblclick", e => {
+    e.stopPropagation();
+    delete settings.scales[id];
+    saveSettings();
+    applyScale(el, 1);
+  });
+});
+applyScales();
 
 /* ---------- Виджеты: погода, задачи, таймер ---------- */
 const wToggles = document.getElementById("wToggles");
@@ -1750,9 +1876,10 @@ function renderWidgetChips() {
   cityIn.value = settings.city ? settings.city.name : "";
   document.getElementById("cityCur").textContent =
     settings.city ? "Сейчас: " + [settings.city.name, settings.city.sub].filter(Boolean).join(", ") : "Город не выбран";
+  renderAiUI();
 }
 function applyWidgets() {
-  ["tasks", "timer"].forEach(k => { document.getElementById(k).hidden = !settings.widgets[k]; });
+  ["tasks", "timer", "chat"].forEach(k => { document.getElementById(k).hidden = !settings.widgets[k]; });
   loadWeather();
 }
 wToggles.addEventListener("click", e => {
@@ -2041,6 +2168,163 @@ setInterval(() => {
   renderTimer();
 }, 250);
 renderTimer();
+
+/* ---------- ИИ-чат: свой адрес API ---------- */
+const AI_URLS = {
+  openai: "https://api.openai.com/v1/chat/completions",
+  anthropic: "https://api.anthropic.com/v1/messages",
+  ollama: "http://localhost:11434/api/chat",
+};
+const aiFormat = document.getElementById("aiFormat");
+const aiFields = { url: document.getElementById("aiUrl"), key: document.getElementById("aiKey"), model: document.getElementById("aiModel"), system: document.getElementById("aiSys") };
+
+function renderAiUI() {
+  aiFormat.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === settings.ai.format)));
+  Object.keys(aiFields).forEach(k => { aiFields[k].value = settings.ai[k] || ""; });
+}
+aiFormat.addEventListener("click", e => {
+  const b = e.target.closest("button[data-f]");
+  if (!b) return;
+  const cur = aiFields.url.value.trim();
+  settings.ai.format = b.dataset.f;
+  // стандартный адрес подставляем, только если поле пустое или там был другой стандартный
+  if (!cur || Object.values(AI_URLS).includes(cur)) settings.ai.url = AI_URLS[b.dataset.f];
+  saveSettings();
+  renderAiUI();
+});
+Object.keys(aiFields).forEach(k => aiFields[k].addEventListener("input", () => {
+  settings.ai[k] = aiFields[k].value.trim();
+  saveSettings();
+}));
+
+const CHAT_KEY = "home.chat.v1";
+let chatMsgs = [];
+try { chatMsgs = JSON.parse(localStorage.getItem(CHAT_KEY)) || []; } catch (e) {}
+const chatLog = document.getElementById("chatLog");
+const chatIn = document.getElementById("chatIn");
+const chatSend = document.getElementById("chatSend");
+let chatCtrl = null;
+
+function saveChat() { try { localStorage.setItem(CHAT_KEY, JSON.stringify(chatMsgs.slice(-30))); } catch (e) {} }
+function addBubble(kind, text) {
+  const d = document.createElement("div");
+  d.className = "msg " + kind;
+  d.textContent = text;
+  chatLog.appendChild(d);
+  chatLog.scrollTop = chatLog.scrollHeight;
+  return d;
+}
+function renderChat() {
+  chatLog.replaceChildren();
+  if (!chatMsgs.length) {
+    addBubble("bot", settings.ai.url ? "Привет! О чём поговорим?" : "Сначала укажи адрес API: кнопка «Виджеты и погода» → ИИ-чат.");
+  }
+  chatMsgs.forEach(m => addBubble(m.role === "user" ? "user" : "bot", m.content));
+}
+
+// кусочек текста из строки потока: OpenAI/Anthropic (SSE) и Ollama (построчный JSON)
+function chatDelta(line) {
+  let payload = line;
+  if (line.startsWith("data:")) payload = line.slice(5).trim();
+  else if (!line.startsWith("{")) return "";
+  if (!payload || payload === "[DONE]") return "";
+  try {
+    const j = JSON.parse(payload);
+    const ch = j.choices && j.choices[0];
+    if (ch) return (ch.delta && ch.delta.content) || ch.text || "";
+    if (j.type === "content_block_delta") return (j.delta && j.delta.text) || "";
+    if (j.message && typeof j.message.content === "string") return j.message.content;
+    if (typeof j.response === "string") return j.response;
+  } catch (e) {}
+  return "";
+}
+
+async function askAI(history, onChunk, signal) {
+  const c = settings.ai;
+  if (!c.url) throw new Error("Не указан адрес API.");
+  if (c.format === "anthropic" && !c.model) throw new Error("Для Anthropic нужно указать модель.");
+  const msgs = history.map(m => ({ role: m.role, content: m.content }));
+  const headers = { "Content-Type": "application/json" };
+  const body = { messages: msgs, stream: true };
+  if (c.model) body.model = c.model;
+
+  if (c.format === "anthropic") {
+    headers["x-api-key"] = c.key;
+    headers["anthropic-version"] = "2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"] = "true";
+    body.max_tokens = 1024;
+    if (c.system) body.system = c.system;
+  } else {
+    if (c.key) headers["Authorization"] = "Bearer " + c.key;
+    if (c.system) body.messages = [{ role: "system", content: c.system }, ...msgs];
+  }
+
+  const r = await fetch(c.url, { method: "POST", headers, body: JSON.stringify(body), signal });
+  if (!r.ok) {
+    const t = await r.text().catch(() => "");
+    throw new Error("Ошибка " + r.status + ". " + t.slice(0, 200));
+  }
+
+  const ct = r.headers.get("content-type") || "";
+  if (r.body && /event-stream|ndjson|jsonl/.test(ct)) {
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "", out = "";
+    const feed = line => { const piece = chatDelta(line.trim()); if (piece) { out += piece; onChunk(out); } };
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) { feed(buf.slice(0, i)); buf = buf.slice(i + 1); }
+    }
+    if (buf.trim()) feed(buf);
+    return out;
+  }
+
+  // сервер не стал стримить — обычный ответ целиком
+  const j = await r.json();
+  const text =
+    (j.choices && j.choices[0] && ((j.choices[0].message && j.choices[0].message.content) || j.choices[0].text)) ||
+    (j.content && j.content[0] && j.content[0].text) ||
+    (j.message && j.message.content) || j.response ||
+    JSON.stringify(j).slice(0, 300);
+  onChunk(text);
+  return text;
+}
+
+document.getElementById("chatForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (chatCtrl) { chatCtrl.abort(); return; }   // пока идёт ответ, кнопка работает как «стоп»
+  const text = chatIn.value.trim();
+  if (!text) return;
+  chatIn.value = "";
+  chatMsgs.push({ role: "user", content: text });
+  renderChat();
+  const bubble = addBubble("bot", "…");
+  chatCtrl = new AbortController();
+  chatSend.textContent = "■";
+  let out = "";
+  try {
+    out = await askAI(chatMsgs.slice(-20), t => { bubble.textContent = t; chatLog.scrollTop = chatLog.scrollHeight; }, chatCtrl.signal);
+  } catch (err) {
+    if (err.name === "AbortError") {
+      out = bubble.textContent === "…" ? "" : bubble.textContent;
+    } else {
+      bubble.remove();
+      addBubble("err", err instanceof TypeError
+        ? "Не удалось подключиться. Проверь адрес. Если он верный, сервер не разрешает запросы с этой страницы (CORS)."
+        : err.message);
+    }
+  } finally {
+    chatCtrl = null;
+    chatSend.textContent = "→";
+  }
+  if (out) { chatMsgs.push({ role: "assistant", content: out }); saveChat(); }
+  else if (chatMsgs.length && chatMsgs[chatMsgs.length - 1].role === "user") { saveChat(); }
+});
+document.getElementById("chatClear").addEventListener("click", () => { chatMsgs = []; saveChat(); renderChat(); });
+renderChat();
 
 applyWidgets();
 
